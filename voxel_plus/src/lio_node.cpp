@@ -8,6 +8,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include "interface/PointCloudWithOdom.h"
+#include "my_code/ros_bag_reader.h"
 
 struct NodeConfig
 {
@@ -21,6 +22,11 @@ struct NodeConfig
     bool publish_voxel_map = false;
     int publish_voxel_num = 1000;
     bool use_pointcloud2 = false;
+    bool use_bag = false;
+    std::string bag_file_path;
+    std::vector<std::string> bag_names;
+    int bag_num = 1;
+    int play_times = 1;
 };
 
 struct NodeGroupData
@@ -40,7 +46,14 @@ public:
     LIONode() : nh("~")
     {
         loadConfig();
-        initSubScribers();
+        if (!config.use_bag)
+        {
+            initSubScribers();
+        }
+        else
+        {
+            initBagReader();
+        }
         initPublishers();
         map_builder.loadConfig(lio_config);
         main_loop = nh.createTimer(ros::Duration(0.02), &LIONode::mainCB, this);
@@ -51,7 +64,12 @@ public:
 
     void loadConfig()
     {
-        nh.param<bool>("use_pointcloud2", config.use_pointcloud2, false); // 加载新参数
+        nh.param<bool>("use_pointcloud2", config.use_pointcloud2, false);
+        nh.param<bool>("use_bag", config.use_bag, false);
+        nh.param<std::string>("bag_file_path", config.bag_file_path, "/home/tian/workspace/bag/par/");
+        nh.param<std::vector<std::string>>("bag_names", config.bag_names, {});
+        nh.param<int>("bag_num", config.bag_num, 1);
+        nh.param<int>("play_times", config.play_times, 0);
 
         nh.param<std::string>("lidar_topic", config.lidar_topic, "/livox/lidar");
         nh.param<std::string>("imu_topic", config.imu_topic, "/livox/imu");
@@ -90,6 +108,42 @@ public:
         nh.param<std::vector<double>>("p_il", p_il, std::vector<double>{0, 0, 0});
         assert(p_il.size() == 3);
         lio_config.p_il << p_il[0], p_il[1], p_il[2];
+    }
+
+    void initBagReader()
+    {
+        bag_reader = std::make_shared<meskernel::BagReader>(config.play_times); // 传递 play_times
+        if (config.bag_num < 0 || config.bag_num >= static_cast<int>(config.bag_names.size()))
+        {
+            ROS_ERROR("Invalid bag_num: %d. Must be 0~%lu.", config.bag_num, config.bag_names.size() - 1);
+            throw std::runtime_error("Invalid bag_num");
+        }
+
+        boost::filesystem::path bag_path(config.bag_file_path);
+        bag_path /= config.bag_names[config.bag_num - 1];
+        std::string bag_file = bag_path.string();
+
+        if (!boost::filesystem::exists(bag_path))
+        {
+            ROS_ERROR("Bag file does not exist: %s", bag_file.c_str());
+            throw std::runtime_error("Bag file not found");
+        }
+
+        std::vector<std::string> topics = {config.lidar_topic, config.imu_topic};
+        bag_reader->init(bag_file, topics);
+        bag_reader->registerImuCallback(std::bind(&LIONode::imuCB, this, std::placeholders::_1));
+        if (config.use_pointcloud2)
+        {
+            bag_reader->registerLivoxCallback2(std::bind(&LIONode::lidarCB2, this, std::placeholders::_1));
+            bag_reader->start2();
+        }
+        else
+        {
+            bag_reader->registerLivoxCallback(std::bind(&LIONode::lidarCB, this, std::placeholders::_1));
+            bag_reader->start();
+        }
+
+        ROS_INFO("Started BagReader with file: %s", bag_file.c_str());
     }
 
     void initSubScribers()
@@ -254,6 +308,8 @@ public:
     }
 
 public:
+    std::shared_ptr<meskernel::BagReader> bag_reader;
+
     ros::NodeHandle nh;
     tf2_ros::TransformBroadcaster br;
     NodeConfig config;

@@ -5,6 +5,7 @@
 
 namespace meskernel
 {
+  BagReader::BagReader(int play_times) : play_times_(play_times) {} 
 
   void BagReader::registerImuCallback(const ImuCallBack &callback)
   {
@@ -68,7 +69,7 @@ namespace meskernel
       if (!last_msg_time.isZero())
       {
         ros::Duration duration = cur_msg_time - last_msg_time;
-        std::this_thread::sleep_for(std::chrono::nanoseconds(duration.toNSec() / play_times)); // 倍数读取
+        std::this_thread::sleep_for(std::chrono::nanoseconds(duration.toNSec() / play_times_)); // 倍数读取
       }
       last_msg_time = cur_msg_time;
 
@@ -109,7 +110,7 @@ namespace meskernel
   //     if (!last_msg_time.isZero())
   //     {
   //       std::this_thread::sleep_for(
-  //           std::chrono::nanoseconds((cur_msg_time - last_msg_time).toNSec() / play_times));
+  //           std::chrono::nanoseconds((cur_msg_time - last_msg_time).toNSec() / play_times_));
   //     }
   //     last_msg_time = cur_msg_time;
 
@@ -151,7 +152,7 @@ namespace meskernel
       if (!last_msg_time.isZero())
       {
         ros::Duration duration = cur_msg_time - last_msg_time;
-        std::this_thread::sleep_for(std::chrono::nanoseconds(duration.toNSec() / play_times));
+        std::this_thread::sleep_for(std::chrono::nanoseconds(duration.toNSec() / play_times_));
       }
       last_msg_time = cur_msg_time;
 

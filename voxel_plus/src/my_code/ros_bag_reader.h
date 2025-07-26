@@ -10,15 +10,12 @@
 #include <livox_ros_driver2/CustomMsg.h>
 #include <sensor_msgs/PointCloud2.h>
 
-int play_times;
-
 namespace meskernel
 {
-
   class BagReader
   {
   public:
-    BagReader() = default;
+    BagReader(int play_times = 1);
     ~BagReader() = default;
 
     using ImuCallBack = std::function<void(const sensor_msgs::Imu::ConstPtr &)>; // 使用 std::function 允许绑定任意可调用对象
@@ -39,7 +36,6 @@ namespace meskernel
     void start();
     void start2();
 
-
     // 停止读取线程
     void stop();
 
@@ -48,8 +44,8 @@ namespace meskernel
     void processLoop();
     void processLoop2();
 
-
   private:
+    int play_times_;
     std::string bag_file_;
     std::vector<std::string> topics_;
     ImuCallBack imu_callback_;

@@ -16,5 +16,22 @@ merge_thresh_for_angle: 0.2
 merge_thresh_for_distance: 0.04
 
 use_pointcloud2: true
+use_bag: true
+bag_file_path: "/home/tian/workspace/bag/par/"
+bag_names:
+  - "1_2024-08-26-16-33-17.bag"
+  - "parking_lot_2024-08-19.bag"
+  - "parking_lot_2024-08-26-17-08-05.bag"
+  - "停车场1.bag"
+  - "停车场2.bag"
+  - "parking_lot_jrh_1.bag"
+  - "parking_lot_jrh_2.bag"
+  - "parking_lot_jrh_10.bag"
+  - "2025-07-02_16-30-24.bag"
+  - "parking_lot_jrh_15.bag"
+  - "2025-7-23-14-8-17.bag"
+  - "2025-7-24-10-47-40.bag"
+bag_num: 10
+play_times: 10
 
 
