@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "catkin_make",
+      "type": "shell",
+      "command": "catkin_make",  // 编译命令
+      "args": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true       // 设为默认编译任务
+      },
+      "problemMatcher": [],
+      "options": {
+        "cwd": "/home/tian/workspace/fastmap_git"  // 在 ROS 工作空间根目录运行
+      }
+    }
+  ]
+}

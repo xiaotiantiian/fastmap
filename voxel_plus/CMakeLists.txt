@@ -56,6 +56,7 @@ set(SRC_LIST src/utils.cpp
              src/map_builder/voxel_map.cpp
              src/map_builder/lio_builder.cpp
              src/map_builder/voxel_map.cpp
+             src/my_code/ros_bag_reader.cpp
              )
 
 add_executable(lio_node src/lio_node.cpp ${SRC_LIST})
