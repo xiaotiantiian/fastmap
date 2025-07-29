@@ -231,6 +231,7 @@ namespace lio
                 calcBodyCov(data_group.residual_info[i].point_lidar, config.ranging_cov, config.angle_cov, data_group.residual_info[i].cov_lidar);
             }
             kf.update();
+            prev_state = kf.x();
             std::cout << "Current position: (" << kf.x().pos(0) << ", " << kf.x().pos(1) << ", " << kf.x().pos(2)
                       << ", " << kf.x().pos.norm() << ")" << std::endl;
             pcl::PointCloud<pcl::PointXYZINormal>::Ptr point_world = lidarToWorld(lidar_cloud);

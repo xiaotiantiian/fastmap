@@ -9,6 +9,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include "interface/PointCloudWithOdom.h"
 #include "my_code/ros_bag_reader.h"
+#include "my_code/pointcloud_split.h"
 
 struct NodeConfig
 {
@@ -27,6 +28,9 @@ struct NodeConfig
     std::vector<std::string> bag_names;
     int bag_num = 1;
     int play_times = 1;
+    int sweep_mode = 0;
+    int num_splits = 2;
+    int combined_mode = 0;
 };
 
 struct NodeGroupData
@@ -43,7 +47,9 @@ struct NodeGroupData
 class LIONode
 {
 public:
-    LIONode() : nh("~")
+    // LIONode() : nh("~")
+    // {
+    LIONode() : nh("~"), prev_cloud(new pcl::PointCloud<pcl::PointXYZINormal>())
     {
         loadConfig();
         if (!config.use_bag)
@@ -70,6 +76,9 @@ public:
         nh.param<std::vector<std::string>>("bag_names", config.bag_names, {});
         nh.param<int>("bag_num", config.bag_num, 1);
         nh.param<int>("play_times", config.play_times, 0);
+        nh.param<int>("sweep_mode", config.sweep_mode, 0);
+        nh.param<int>("num_splits", config.num_splits, 2);
+        nh.param<int>("combined_mode", config.combined_mode, 0);
 
         nh.param<std::string>("lidar_topic", config.lidar_topic, "/livox/lidar");
         nh.param<std::string>("imu_topic", config.imu_topic, "/livox/imu");
@@ -194,8 +203,44 @@ public:
             ROS_WARN("LIDAR TIME SYNC ERROR");
             group_data.lidar_buffer.clear();
         }
-        group_data.last_lidar_time = timestamp;
-        group_data.lidar_buffer.emplace_back(timestamp, cloud);
+        // group_data.last_lidar_time = timestamp;
+        // group_data.lidar_buffer.emplace_back(timestamp, cloud);
+        std::deque<pcl::PointCloud<pcl::PointXYZINormal>::Ptr> split_clouds;
+        std::deque<double> time_buffer;
+
+        // 根据 sweep_mode 处理点云
+        if (config.sweep_mode == 1)
+        {
+            lidar_processor.splitByTime(cloud, timestamp, config.num_splits, split_clouds, time_buffer);
+        }
+        else if (config.sweep_mode == 2)
+        {
+            lidar_processor.splitByCount(cloud, timestamp, config.num_splits, split_clouds, time_buffer);
+        }
+        else
+        {
+            split_clouds.push_back(cloud);
+            time_buffer.push_back(timestamp);
+        }
+
+        // 存入 lidar_buffer
+        if (!split_clouds.empty())
+        {
+            for (size_t i = 0; i < split_clouds.size(); ++i)
+            {
+                if (time_buffer[i] < group_data.last_lidar_time)
+                {
+                    ROS_WARN("LIDAR TIME SYNC ERROR for split %lu", i);
+                    continue;
+                }
+                group_data.lidar_buffer.emplace_back(time_buffer[i], split_clouds[i]);
+                group_data.last_lidar_time = time_buffer[i];
+            }
+        }
+        else
+        {
+            ROS_WARN("No valid split clouds generated in lidarCB.");
+        }
     }
 
     void lidarCB2(const sensor_msgs::PointCloud2::ConstPtr msg)
@@ -209,8 +254,44 @@ public:
             ROS_WARN("LIDAR TIME SYNC ERROR");
             group_data.lidar_buffer.clear();
         }
-        group_data.last_lidar_time = timestamp;
-        group_data.lidar_buffer.emplace_back(timestamp, cloud);
+        // group_data.last_lidar_time = timestamp;
+        // group_data.lidar_buffer.emplace_back(timestamp, cloud);
+        std::deque<pcl::PointCloud<pcl::PointXYZINormal>::Ptr> split_clouds;
+        std::deque<double> time_buffer;
+
+        // 根据 sweep_mode 处理点云
+        if (config.sweep_mode == 1)
+        {
+            lidar_processor.splitByTime(cloud, timestamp, config.num_splits, split_clouds, time_buffer);
+        }
+        else if (config.sweep_mode == 2)
+        {
+            lidar_processor.splitByCount(cloud, timestamp, config.num_splits, split_clouds, time_buffer);
+        }
+        else
+        {
+            split_clouds.push_back(cloud);
+            time_buffer.push_back(timestamp);
+        }
+
+        // 存入 lidar_buffer
+        if (!split_clouds.empty())
+        {
+            for (size_t i = 0; i < split_clouds.size(); ++i)
+            {
+                if (time_buffer[i] < group_data.last_lidar_time)
+                {
+                    ROS_WARN("LIDAR TIME SYNC ERROR for split %lu", i);
+                    continue;
+                }
+                group_data.lidar_buffer.emplace_back(time_buffer[i], split_clouds[i]);
+                group_data.last_lidar_time = time_buffer[i];
+            }
+        }
+        else
+        {
+            ROS_WARN("No valid split clouds generated in lidarCB.");
+        }
     }
 
     bool syncPackage()
@@ -251,6 +332,30 @@ public:
         if (map_builder.status != lio::LIOStatus::LIO_MAPPING)
             return;
         state = map_builder.kf.x();
+        std::cout << "=================" << std::endl;
+        if (config.sweep_mode != 0 && config.combined_mode == 1)
+        {
+            std::cout << "已启动combined" << std::endl;
+            std::cout<<"state: "<<state.pos.transpose()<<std::endl;
+            std::cout<<"prev_state: "<<map_builder.prev_state.pos.transpose()<<std::endl;
+            if (!sync_pack.cloud || !prev_cloud)
+            {
+                ROS_ERROR("Null point cloud pointer detected!");
+                return;
+            }
+            pcl::PointCloud<pcl::PointXYZINormal>::Ptr feats_curr_raw(new pcl::PointCloud<pcl::PointXYZINormal>(*sync_pack.cloud));
+            pcl::PointCloud<pcl::PointXYZINormal>::Ptr feats_combined(new pcl::PointCloud<pcl::PointXYZINormal>);
+            // cout << state_point.offset_R_L_I << "\n"
+            //      << state_point.offset_T_L_I << endl;
+            // 调用融合函数
+            lidar_processor.fuseClouds(sync_pack.cloud, prev_cloud, state, map_builder.prev_state, feats_combined);
+            if (feats_combined && feats_curr_raw)
+            {
+                sync_pack.cloud = feats_combined;
+                *prev_cloud = *feats_curr_raw;
+            }
+        }
+
         br.sendTransform(eigen2Transform(state.rot, state.pos, config.map_frame, config.body_frame, sync_pack.cloud_end_time));
         pcl::PointCloud<pcl::PointXYZINormal>::Ptr body_cloud = map_builder.lidarToBody(sync_pack.cloud);
         publishCloud(body_cloud_pub, body_cloud, config.body_frame, sync_pack.cloud_end_time);
@@ -309,6 +414,8 @@ public:
 
 public:
     std::shared_ptr<meskernel::BagReader> bag_reader;
+    tian::Lidar_processing lidar_processor;
+    pcl::PointCloud<pcl::PointXYZINormal>::Ptr prev_cloud;
 
     ros::NodeHandle nh;
     tf2_ros::TransformBroadcaster br;

@@ -73,6 +73,7 @@ namespace lio
         pcl::PointCloud<pcl::PointXYZINormal>::Ptr lidarToBody(const pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud);
 
     public:
+        kf::State prev_state;
         kf::IESKF kf;
         LIOConfig config;
         LIODataGroup data_group;
