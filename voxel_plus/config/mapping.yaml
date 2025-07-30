@@ -44,5 +44,5 @@ bag_num: 1
 play_times: 10
 num_splits: 2
 sweep_mode: 2
-combined_mode: 1
+combined_mode: 0
 
