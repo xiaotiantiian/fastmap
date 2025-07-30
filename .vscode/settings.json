@@ -77,6 +77,8 @@
         "variant": "cpp",
         "core": "cpp",
         "*.txx": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "*.inc": "cpp",
+        "filesystem": "cpp"
     }
 }

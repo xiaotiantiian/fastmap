@@ -259,8 +259,53 @@ namespace lio
             }
             kf.update();
             prev_state = kf.x();
+
             std::cout << "Current position: (" << kf.x().pos(0) << ", " << kf.x().pos(1) << ", " << kf.x().pos(2)
                       << ", " << kf.x().pos.norm() << ")" << std::endl;
+
+            // std::stringstream dir_ss;
+            // dir_ss << "/home/tian/workspace/fastmap_git/src/fastmap/voxel_plus/" << "sweep_" << config.sweep_mode << "_combined_" << config.combined_mode << "/";
+            // std::string dir_path = dir_ss.str();
+            // // struct stat info;
+            // if (stat(dir_path.c_str(), &info) != 0)
+            // {
+            //     std::string cmd = "mkdir -p " + dir_path;
+            //     if (system(cmd.c_str()) != 0)
+            //     {
+            //         std::cerr << "Error creating directory: " << dir_path << std::endl;
+            //         return;
+            //     }
+            // // }
+            // std::stringstream file_ss;
+            // file_ss << dir_path << LIOConfig.bag_num << ".txt";
+            // std::ofstream pose_out(file_ss, std::ios::app); // 以追加模式打开
+
+            std::string pose_file = "/home/tian/workspace/fastmap_git/src/fastmap/voxel_plus/data/split_" + std::to_string(config.sweep_mode) + "_combined_" + std::to_string(config.combined_mode) + "/" + std::to_string(config.bag_num) + "_poses.txt";
+            fs::path dir_path = fs::path(pose_file).parent_path();
+            // 如果目录不存在，则递归创建
+            if (!fs::exists(dir_path))
+            {
+                fs::create_directories(dir_path); // 自动创建所有缺失的父目录
+            }
+            std::ofstream pose_out(pose_file, std::ios::app); // 以追加模式打开
+            if (pose_out.is_open())
+            {
+                // pose_out << std::fixed << std::setprecision(6)
+                //          << pos_index << " "
+                //          << state_point.pos << " "
+                //          << state_point.rot << "\n";
+                pose_out << std::fixed << std::setprecision(6)
+                         << prev_state.pos.norm() << std::endl;
+
+                pose_out.close();
+                std::cout << "Pose saved to " << pose_file << " for index " << pos_index << std::endl;
+            }
+            else
+            {
+                std::cerr << "Failed to open pose file: " << pose_file << std::endl;
+            }
+            pos_index++;
+
             pcl::PointCloud<pcl::PointXYZINormal>::Ptr point_world = lidarToWorld(lidar_cloud);
             std::vector<PointWithCov> pv_list;
             Eigen::Matrix3d r_wl = kf.x().rot * kf.x().rot_ext;

@@ -1,48 +1,25 @@
-lidar_topic: /livox/lidar
-imu_topic: /livox/imu
-
-map_frame: lidar
+bag_file_path: /home/tian/workspace/bag/par/
+bag_names: [1_2024-08-26-16-33-17.bag, parking_lot_2024-08-19.bag, parking_lot_2024-08-26-17-08-05.bag,
+  "\u505C\u8F66\u573A1.bag", "\u505C\u8F66\u573A2.bag", parking_lot_jrh_1.bag, parking_lot_jrh_2.bag,
+  parking_lot_jrh_10.bag, 2025-07-02_16-30-24.bag, parking_lot_jrh_15.bag, 2025-7-23-14-8-17.bag,
+  2025-7-24-10-47-40.bag]
+bag_num: 1
 body_frame: body
-
-publish_voxel_map: true
-publish_voxel_num: 2000
-
-scan_resolution: 0.1
-voxel_size: 0.4
+combined_mode: 0
+imu_topic: /livox/imu
+lidar_topic: /livox/lidar
 map_capacity: 100000
+map_frame: lidar
 max_point_thresh: 100
-update_size_threshes: 20
 merge_thresh_for_angle: 0.2
 merge_thresh_for_distance: 0.04
-
-use_pointcloud2: false
-use_bag: true
-bag_file_path: /home/tian/workspace/bag/off/
-bag_names:
-  [
-    2024-07-26-17-11-38.bag,
-    2_2024-08-12-14-46-20.bag,
-    office_meskernel_3.bag,
-    2024_12_09_11_47_39_0.bag,
-    2024_12_10_10_59_14_0.bag,
-  ]
-# bag_file_path: "/home/tian/workspace/bag/par/"
-# bag_names:
-#   - "1_2024-08-26-16-33-17.bag"
-#   - "parking_lot_2024-08-19.bag"
-#   - "parking_lot_2024-08-26-17-08-05.bag"
-#   - "停车场1.bag"
-#   - "停车场2.bag"
-#   - "parking_lot_jrh_1.bag"
-#   - "parking_lot_jrh_2.bag"
-#   - "parking_lot_jrh_10.bag"
-#   - "2025-07-02_16-30-24.bag"
-#   - "parking_lot_jrh_15.bag"
-#   - "2025-7-23-14-8-17.bag"
-#   - "2025-7-24-10-47-40.bag"
-bag_num: 1
-play_times: 10
 num_splits: 2
-sweep_mode: 2
-combined_mode: 0
-
+play_times: 10
+publish_voxel_map: true
+publish_voxel_num: 2000
+scan_resolution: 0.1
+sweep_mode: 0
+update_size_threshes: 20
+use_bag: true
+use_pointcloud2: false
+voxel_size: 0.4

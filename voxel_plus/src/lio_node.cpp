@@ -49,8 +49,8 @@ class LIONode
 public:
     LIONode() : nh("~")
     {
-    // LIONode() : nh("~"), prev_cloud(new pcl::PointCloud<pcl::PointXYZINormal>())
-    // {
+        // LIONode() : nh("~"), prev_cloud(new pcl::PointCloud<pcl::PointXYZINormal>())
+        // {
         loadConfig();
         if (!config.use_bag)
         {
@@ -79,8 +79,12 @@ public:
         nh.param<int>("sweep_mode", config.sweep_mode, 0);
         nh.param<int>("num_splits", config.num_splits, 2);
         nh.param<int>("combined_mode", config.combined_mode, 0);
-        lio_config.sweep_mode = config.sweep_mode;       // 传递 sweep_mode
-        lio_config.combined_mode = config.combined_mode; // 传递 combined_mode
+        lio_config.sweep_mode = config.sweep_mode;
+        lio_config.combined_mode = config.combined_mode;
+        lio_config.bag_num = config.bag_num;
+
+        if (config.bag_num > 4)
+            config.use_pointcloud2 = true;
 
         nh.param<std::string>("lidar_topic", config.lidar_topic, "/livox/lidar");
         nh.param<std::string>("imu_topic", config.imu_topic, "/livox/imu");
@@ -131,7 +135,7 @@ public:
         }
 
         boost::filesystem::path bag_path(config.bag_file_path);
-        bag_path /= config.bag_names[config.bag_num - 1];
+        bag_path /= config.bag_names[config.bag_num];
         std::string bag_file = bag_path.string();
 
         if (!boost::filesystem::exists(bag_path))
