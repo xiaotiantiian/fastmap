@@ -5,8 +5,17 @@
 #include <deque>
 #include <algorithm>
 #include <iostream>
-#include "/home/tian/workspace/fastmap_git/src/fastmap/voxel_plus/src/map_builder/lio_builder.h"
+// #include "/home/tian/workspace/fastmap_git/src/fastmap/voxel_plus/src/map_builder/lio_builder.h"
 #include "/home/tian/workspace/fastmap_git/src/fastmap/voxel_plus/src/map_builder/ieskf.h"
+
+// 前置声明（替代 #include "lio_builder.h"）
+namespace kf {
+    struct State;  // 前置声明 kf::State
+}
+
+namespace lio {
+    struct SyncPackage;  // 前置声明 lio::SyncPackage
+}
 
 namespace tian
 {

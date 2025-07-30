@@ -4,6 +4,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/common/transforms.h>
 #include "voxel_map.h"
+#include "/home/tian/workspace/fastmap_git/src/fastmap/voxel_plus/src/my_code/pointcloud_split.h"
 
 namespace lio
 {
@@ -39,6 +40,9 @@ namespace lio
         double merge_thresh_for_angle = 0.1;
         double merge_thresh_for_distance = 0.04;
         int map_capacity = 100000;
+
+        int sweep_mode = 0;
+        int combined_mode = 0;
     };
     struct LIODataGroup
     {
@@ -56,7 +60,9 @@ namespace lio
     class LIOBuilder
     {
     public:
-        LIOBuilder() = default;
+        // LIOBuilder() = default; 
+        //初始化new
+        LIOBuilder() : prev_cloud(new pcl::PointCloud<pcl::PointXYZINormal>()) {}
 
         void loadConfig(LIOConfig &_config);
 
@@ -73,7 +79,10 @@ namespace lio
         pcl::PointCloud<pcl::PointXYZINormal>::Ptr lidarToBody(const pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud);
 
     public:
+        pcl::PointCloud<pcl::PointXYZINormal>::Ptr prev_cloud;
+        tian::Lidar_processing lidar_fuse;
         kf::State prev_state;
+        kf::State curr_state;
         kf::IESKF kf;
         LIOConfig config;
         LIODataGroup data_group;

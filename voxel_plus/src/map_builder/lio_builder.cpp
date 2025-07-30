@@ -187,6 +187,7 @@ namespace lio
         }
         else if (status == LIOStatus::MAP_INIT)
         {
+            std::cout << "+++++++++++++++++" << std::endl;
             undistortCloud(package);
             pcl::PointCloud<pcl::PointXYZINormal>::Ptr point_world = lidarToWorld(package.cloud);
             std::vector<PointWithCov> pv_list;
@@ -215,6 +216,32 @@ namespace lio
         else
         {
             undistortCloud(package);
+            curr_state = kf.x();
+            std::cout << "=================" << std::endl;
+            if (config.sweep_mode != 0 && config.combined_mode == 1)
+            {
+                std::cout << "已启动combined" << std::endl;
+                std::cout << "state: " << curr_state.pos.transpose() << std::endl;
+                std::cout << "prev_state: " << prev_state.pos.transpose() << std::endl;
+                std::cout << "before_fuse,cloud_size: " << package.cloud->size() << std::endl;
+                if (!package.cloud || !prev_cloud)
+                {
+                    ROS_ERROR("Null point cloud pointer detected!");
+                    return;
+                }
+                pcl::PointCloud<pcl::PointXYZINormal>::Ptr feats_curr_raw(new pcl::PointCloud<pcl::PointXYZINormal>(*package.cloud));
+                pcl::PointCloud<pcl::PointXYZINormal>::Ptr feats_combined(new pcl::PointCloud<pcl::PointXYZINormal>);
+                // cout << state_point.offset_R_L_I << "\n"
+                //      << state_point.offset_T_L_I << endl;
+                // 调用融合函数
+                lidar_fuse.fuseClouds(package.cloud, prev_cloud, curr_state, prev_state, feats_combined);
+                if (feats_combined && feats_curr_raw)
+                {
+                    package.cloud = feats_combined;
+                    *prev_cloud = *feats_curr_raw;
+                    std::cout << "after_fuse,cloud_size: " << package.cloud->size() << std::endl;
+                }
+            }
             if (config.scan_resolution > 0.0)
             {
                 scan_filter.setInputCloud(package.cloud);
